@@ -1,22 +1,26 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace Wpf_FormatPixels
 {
     class FormatPixelsViewModel : INotifyPropertyChanged
     {
-        private BitmapImage originalImage;
-        public BitmapImage OriginalImage
+        private bool standartFilterIsChecked = false;
+        public bool StandartFilterIsChecked
+        {
+            get => standartFilterIsChecked;
+            set
+            {
+                standartFilterIsChecked = value;
+                OnPropertyChanged("StandartFilterIsChecked");
+            }
+        }
+
+        private BitmapSource originalImage;
+        public BitmapSource OriginalImage
         {
             get => originalImage;
             set
@@ -26,8 +30,8 @@ namespace Wpf_FormatPixels
             }
         }
 
-        private BitmapImage currentImage;
-        public BitmapImage CurrentImage
+        private BitmapSource currentImage;
+        public BitmapSource CurrentImage
         {
             get => currentImage;
             set
@@ -51,18 +55,36 @@ namespace Wpf_FormatPixels
                 return command_OpenImage ??
                     (command_OpenImage = new RelayCommand((object obj) =>
                {
-                   OpenFileDialog openFileDialog = new OpenFileDialog();
-                   openFileDialog.Filter = "*.BMP|*.BMP|*.JPG|*.JPG";
-                   if (openFileDialog.ShowDialog() == true)
+                   IImageService imageService = new ImageService();
+                   BitmapImage openImage = imageService.OpenImage();
+                   if (openImage != null)
                    {
-                       Stream stream = File.Open(openFileDialog.FileName, FileMode.Open);
-                       BitmapImage img = new BitmapImage();
-                       img.BeginInit();
-                       img.StreamSource = stream;
-                       img.EndInit();
-                       CurrentImage = OriginalImage = img;
+                       OriginalImage = openImage;
+                       StandartFilterIsChecked = true;
+                       if (Command_SetOriginalImage.CanExecute(null))
+                       {
+                           Command_SetOriginalImage.Execute(null);
+                       }
                    }
                }));
+            }
+        }
+
+        private RelayCommand command_SaveImage;
+        public RelayCommand Command_SaveImage
+        {
+            get
+            {
+                return command_SaveImage ??
+                    (command_SaveImage = new RelayCommand((object obj) =>
+                {
+                    IImageService imageService = new ImageService();
+                    imageService.SaveImage(CurrentImage);
+                },
+                (object obj) =>
+                {
+                    return CurrentImage != null;
+                }));
             }
         }
 
@@ -74,13 +96,12 @@ namespace Wpf_FormatPixels
                 return command_SetOriginalImage ??
                     (command_SetOriginalImage = new RelayCommand((object obj) =>
                 {
-                    CurrentImage = OriginalImage.Clone();
+                    CurrentImage = OriginalImage;
                 },
                 (object obj) =>
-                    {
+                { 
                         return OriginalImage != null;
-                    }
-                ));
+                }));
             }
         }
 
@@ -92,20 +113,30 @@ namespace Wpf_FormatPixels
                 return command_SetBlackWhiteImage ??
                     (command_SetBlackWhiteImage = new RelayCommand((object obj) =>
                     {
-                        FormatConvertedBitmap blackWhiteImage = new FormatConvertedBitmap();
-                        blackWhiteImage.BeginInit();
-                        blackWhiteImage.Source = CurrentImage;
-                        blackWhiteImage.DestinationFormat = PixelFormats.BlackWhite;
-                        blackWhiteImage.EndInit();
-                        //Stream stream = File.Open("C:\\Снимок.PNG", FileMode.Open);
-                        //CurrentImage.StreamSource = stream;
-                        //stream.Close();
-                        CurrentImage = blackWhiteImage.Source as BitmapImage;
+                        CurrentImage =  ImageEditing.MakeImageBlackWhite(OriginalImage);
                     },
                 (object obj) =>
                     {
                         return OriginalImage != null;
                     }
+                ));
+            }
+        }
+
+        private RelayCommand command_SetGrayImage;
+        public RelayCommand Command_SetGrayImage
+        {
+            get
+            {
+                return command_SetGrayImage ??
+                    (command_SetGrayImage = new RelayCommand((object obj) =>
+                {
+                    CurrentImage = ImageEditing.MakeImageGray(OriginalImage);
+                },
+                (object obj) =>
+                {
+                    return OriginalImage != null;
+                }
                 ));
             }
         }

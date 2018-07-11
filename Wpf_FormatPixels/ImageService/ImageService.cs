@@ -1,22 +1,42 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Win32;
+using System;
 using System.Windows.Media.Imaging;
 
 namespace Wpf_FormatPixels
 {
     class ImageService : IImageService
     {
-        public BitmapImage OpenImage(string path)
+        private readonly string filterString = "*.JPG|*.JPG";
+
+        public BitmapImage OpenImage()
         {
-            throw new NotImplementedException();
+            OpenFileDialog openFileDialog = new OpenFileDialog();
+            openFileDialog.Filter = filterString;
+            if (openFileDialog.ShowDialog() == true)
+            {
+                BitmapImage img = new BitmapImage();
+                img.BeginInit();
+                img.UriSource = new Uri(openFileDialog.FileName);
+                img.CacheOption = BitmapCacheOption.OnLoad;
+                img.EndInit();
+                return img;
+            }
+            return null;
         }
 
-        public void SaveImage(string path, BitmapImage image)
+        public void SaveImage(BitmapSource image)
         {
-            throw new NotImplementedException();
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = filterString;
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                JpegBitmapEncoder imageEncoder = new JpegBitmapEncoder();
+                imageEncoder.Frames.Add(BitmapFrame.Create(image));
+                using (var stream = saveFileDialog.OpenFile())
+                {
+                    imageEncoder.Save(stream);
+                }
+            }
         }
     }
 }

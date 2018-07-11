@@ -54,6 +54,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="FormatPixelsViewModel.cs" />
+    <Compile Include="ImageEditing\ImageEditing.cs" />
     <Compile Include="ImageService\IImageService.cs" />
     <Compile Include="ImageService\ImageService.cs" />
     <Compile Include="RelayCommand.cs" />
